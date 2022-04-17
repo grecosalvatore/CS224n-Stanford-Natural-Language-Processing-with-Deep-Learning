@@ -140,8 +140,8 @@ def negSamplingLossAndGradient(
     indexCount = np.bincount(indices)[:, np.newaxis]
     for i in np.unique(indices):
         gradOutsideVecs[i] *= indexCount[i]
+        
     ### END YOUR CODE
-
     return loss, gradCenterVec, gradOutsideVecs
 
 
