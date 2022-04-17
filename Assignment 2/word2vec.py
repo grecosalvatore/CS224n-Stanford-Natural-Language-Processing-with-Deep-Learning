@@ -122,14 +122,24 @@ def negSamplingLossAndGradient(
     ### YOUR CODE HERE (~10 Lines)
 
     ### Please use your implementation of sigmoid in here.
-    loss = - np.log(sigmoid(np.dot(outsideVectors, centerWordVec))) - np.sum(-np.dot(outsideVectors[indices], centerWordVec))
+    negative_indices = indices[1:]
+
+    loss = - np.log(sigmoid(np.dot(outsideVectors[outsideWordIdx], centerWordVec))) - np.sum(np.log(sigmoid(-np.dot(outsideVectors[negative_indices], centerWordVec))))
 
     # Create ground truth one-hot vector
-    y_true = np.zeros((outsideVectors.shape[0]))
-    y_true[outsideWordIdx] = 1
+    y_hat_o = 1 - sigmoid(np.dot(outsideVectors[outsideWordIdx], centerWordVec))
+    y_hat_k = 1 - sigmoid(-np.dot(outsideVectors[negative_indices], centerWordVec))[:, np.newaxis]
 
-    gradCenterVec = np.dot(y_hat - y_true, outsideVectors)
-    gradOutsideVecs = np.outer((y_hat - y_true), centerWordVec)
+    gradCenterVec = - outsideVectors[outsideWordIdx] * y_hat_o + np.sum(y_hat_k * outsideVectors[negative_indices], axis=0)
+
+    gradOutsideVecs = np.zeros((outsideVectors.shape))
+    #gradOutsideVecs[negative_indices] += np.dot(y_hat_k, centerWordVec[:, np.newaxis].T)
+    gradOutsideVecs[negative_indices] += centerWordVec * y_hat_k
+    gradOutsideVecs[outsideWordIdx] = - centerWordVec * y_hat_o
+
+    indexCount = np.bincount(indices)[:, np.newaxis]
+    for i in np.unique(indices):
+        gradOutsideVecs[i] *= indexCount[i]
     ### END YOUR CODE
 
     return loss, gradCenterVec, gradOutsideVecs
@@ -175,9 +185,23 @@ def skipgram(currentCenterWord, windowSize, outsideWords, word2Ind,
     gradOutsideVectors = np.zeros(outsideVectors.shape)
 
     ### YOUR CODE HERE (~8 Lines)
+    center_word_id = word2Ind[currentCenterWord]
+    center_word_vec = centerWordVectors[center_word_id]
+
+    for outside_word in outsideWords:
+
+        # Get the id of the current outside word
+        outside_word_id = word2Ind[outside_word]
+
+        local_loss, local_gradCenterVec, local_gradOutsideVecs = word2vecLossAndGradient(center_word_vec, outside_word_id,
+                                                                                         outsideVectors, dataset)
+        # Increment the loss with the computed partial loss for each outside word
+        loss += local_loss
+
+        gradCenterVecs[center_word_id] += local_gradCenterVec
+        gradOutsideVectors += local_gradOutsideVecs
 
     ### END YOUR CODE
-    
     return loss, gradCenterVecs, gradOutsideVectors
 
 
