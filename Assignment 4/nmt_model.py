@@ -92,6 +92,22 @@ class NMT(nn.Module):
         # Initialize decoder
         self.decoder = nn.LSTMCell(input_size=embed_size+hidden_size, hidden_size=hidden_size, bias=True)
 
+        # Initialize Linear Layers
+        self.h_projection = nn.Linear(in_features=2*hidden_size, out_features=hidden_size, bias=False)
+        self.c_projection = nn.Linear(in_features=2*hidden_size, out_features=hidden_size, bias=False)
+
+        # Initialize attention projection
+        self.att_projection = nn.Linear(in_features=2*hidden_size, out_features=hidden_size, bias=False)
+
+        # Initialize combined output projection
+        self.combined_output_projection = nn.Linear(in_features=3*hidden_size, out_features=hidden_size, bias=False)
+
+        # Initialize target vocab projection
+        self.target_vocab_projection = nn.Linear(in_features=hidden_size, out_features=len(vocab.tgt), bias=False)
+
+        # Initialize dropout
+        self.dropout = nn.Dropout(p=dropout_rate)
+
 
         ### END YOUR CODE
 
